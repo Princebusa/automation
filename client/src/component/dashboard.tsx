@@ -54,6 +54,14 @@ export default function dashboard() {
     []
   );
 
+  const onConnectEnd = useCallback(
+    (params: any, sh: any)=>
+    {
+console.log(sh)
+    }
+    ,[]
+  );
+
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <p>{JSON.stringify(nodes)}</p>
@@ -83,6 +91,7 @@ export default function dashboard() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
         fitView
       />
     </div>

@@ -12,7 +12,7 @@ export const Timer =({data, isConnectable}: {
     isConnectable: boolean
 })=> {
 
-    console.log(data.metadata)
+   
   
     return(
 <div className="border py-1 px-4 rounded-xs">
