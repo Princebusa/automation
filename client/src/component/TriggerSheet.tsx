@@ -1,4 +1,4 @@
-import type { NodeKind } from "./dashboard";
+import type { NodeTypes } from "./dashboard";
 import { useState } from "react";
 import type { MetaData } from "./dashboard";
 import { Button } from "@/components/ui/button";
@@ -46,17 +46,12 @@ const SUPPORTED_TRIGGER = [
 export const TriggerSheet = ({
   onSelect,
 }: {
-  onSelect: (kind: NodeKind, metadata: MetaData) => void;
+  onSelect: (kind: NodeTypes, metadata: MetaData) => void;
 }) => {
-  const [metadata, setMetaData] = useState<TimerMetadata | PriceTriggerMetadata>({
-    time: 3600
-  });
-  const [selectedTrigger, setSelectedTrigger] = useState(SUPPORTED_TRIGGER[0].id)
+  const [metadata, setMetaData] = useState<TimerMetadata | PriceTriggerMetadata | {}>({});
+  const [selectedTrigger, setSelectedTrigger] = useState<NodeTypes>("timer");
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="outline">Open</Button>
-      </SheetTrigger>
+    <Sheet open={true}>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Create a Trigger</SheetTitle>
@@ -65,7 +60,7 @@ export const TriggerSheet = ({
           </SheetDescription>
         </SheetHeader>
        <div className="px-3 grid gap-5">
-         <Select value={selectedTrigger} onValueChange={(value)=> setSelectedTrigger(value)}>
+         <Select value={selectedTrigger} onValueChange={(value)=> setSelectedTrigger(value as NodeTypes)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select a TRIGGER" />
           </SelectTrigger>
