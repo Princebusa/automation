@@ -1,0 +1,1 @@
+export type NodeTypes = "mail" | "tr" | "chat" | "timer" | "price-trigger";
