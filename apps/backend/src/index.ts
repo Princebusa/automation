@@ -1,9 +1,15 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import path from "path";
 import authRoutes from "./routes/auth.routes";
 
-dotenv.config();
+// Declare __dirname for TypeScript (available at runtime in CommonJS)
+declare const __dirname: string;
+
+// Load .env file from the backend directory
+// When running from dist/index.js, __dirname will be dist/, so we go up one level to find .env
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 

@@ -17,7 +17,7 @@ export const Register  = async ( req: Request, res: Response) => {
 
   const { username, email, password } = parseResult.data;
 
-  const exist  = await User.findOne({where:{email}})
+  const exist  = await User.findOne({email: email})
 
   if(exist){
     return res.status(400).json({error: "User already exists"});
@@ -52,8 +52,8 @@ export const login = async ( req: Request, res: Response) => {
 
   const { email, password } = parseResult.data;
 
-  const user = await User.findOne({where:{email}})
-
+  const user = await User.findOne({email: email})
+console.log(user)
   if(!user){
     return res.status(400).json({error: "Invalid email or password"});
   }
