@@ -1,25 +1,17 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import path from "path";
 import authRoutes from "./routes/auth.routes";
-
-// Declare __dirname for TypeScript (available at runtime in CommonJS)
-declare const __dirname: string;
-
-// Load .env file from the backend directory
-// When running from dist/index.js, __dirname will be dist/, so we go up one level to find .env
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
-
+import workflow from "./routes/workFlow.routes"
+import cors from "cors"
+dotenv.config();
 const app = express();
-
-// Middleware
+app.use(cors())
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
 app.use("/api/auth", authRoutes);
-
+app.use("/api", workflow)
 
 
 // Database connection
