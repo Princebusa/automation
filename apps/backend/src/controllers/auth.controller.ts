@@ -38,7 +38,15 @@ export const Register  = async ( req: Request, res: Response) => {
     { expiresIn: "24h" }
   );
    
-  return res.status(201).json({message: "User registered successfully", userId: newUser._id, token});
+  return res.status(201).json({
+    message: "User registered successfully", 
+    token,
+    user: {
+      id: newUser._id.toString(),
+      email: newUser.email,
+      username: newUser.name
+    }
+  });
 
 }
 
@@ -67,6 +75,14 @@ export const login = async ( req: Request, res: Response) => {
     process.env.JWT_SECRET as string,
     { expiresIn: "24h" }
   );
-  return res.status(200).json({message: "Login successful", userId: user._id, token});
+  return res.status(200).json({
+    message: "Login successful", 
+    token,
+    user: {
+      id: user._id.toString(),
+      email: user.email,
+      username: user.name
+    }
+  });
 
 }

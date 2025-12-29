@@ -160,6 +160,8 @@ if(!sh.isValid){
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
+      {JSON.stringify(nodes)}
+      
       <div className="absolute top-4 right-4 z-10">
         <Button
           onClick={handleLogout}

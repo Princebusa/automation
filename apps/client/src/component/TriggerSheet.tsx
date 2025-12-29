@@ -1,6 +1,6 @@
-import type { NodeTypes } from "comman/types";
+import type { NodeTypes } from "comman";
 import { useState } from "react";
-import type { MetaData } from "./dashboard";
+import type { MetaData } from "./workflow";
 import { Button } from "@/components/ui/button";
 import type { TimerMetadata  } from "../nodes/triggers/Timer"
 import type {PriceTriggerMetadata} from "../nodes/triggers/Trigger"
