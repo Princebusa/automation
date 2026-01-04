@@ -62,4 +62,19 @@ export async function apiGetNodes(): Promise<any> {
   return res.data;
 }
 
+export async function apiUpdateWorkflow(workflowId: string, workflow: { nodes: any[]; edges: any[]; name?: string }): Promise<any> {
+  const res = await api.put(`/workflow/${workflowId}`, workflow);
+  return res.data;
+}
+
+export async function apiExecuteWorkflow(workflowId: string): Promise<any> {
+  const res = await api.post(`/workflow/${workflowId}/execute`);
+  return res.data;
+}
+
+export async function apiExecuteNode(nodeType: string, metadata: any): Promise<any> {
+  const res = await api.post("/execute-node", { nodeType, metadata });
+  return res.data;
+}
+
 

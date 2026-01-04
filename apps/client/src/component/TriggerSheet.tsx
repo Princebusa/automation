@@ -4,6 +4,8 @@ import type { MetaData } from "./workflow";
 import { Button } from "@/components/ui/button";
 import type { TimerMetadata  } from "../nodes/triggers/Timer"
 import type {PriceTriggerMetadata} from "../nodes/triggers/Trigger"
+import type { WebhookMetadata } from "../nodes/triggers/Webhook";
+import type { ScheduleMetadata } from "../nodes/triggers/Schedule";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -33,13 +35,23 @@ import React from "react";
 const SUPPORTED_TRIGGER = [
   {
     id: "timer",
-    title: "timer",
-    description: "Run This node on every x/minutes",
+    title: "Timer",
+    description: "Run this node every X seconds",
   },
   {
     id: "price-trigger",
-    title: "price-trigger",
-    description: "Runs Whenever price goes above a certain number",
+    title: "Price Trigger",
+    description: "Runs when price goes above a certain number",
+  },
+  {
+    id: "webhook",
+    title: "Webhook",
+    description: "Triggered by HTTP requests",
+  },
+  {
+    id: "schedule",
+    title: "Schedule",
+    description: "Run on specific schedule",
   },
 ];
 
@@ -48,7 +60,7 @@ export const TriggerSheet = ({
 }: {
   onSelect: (kind: NodeTypes, metadata: MetaData) => void;
 }) => {
-  const [metadata, setMetaData] = useState<TimerMetadata | PriceTriggerMetadata | {}>({});
+  const [metadata, setMetaData] = useState<MetaData>({});
   const [selectedTrigger, setSelectedTrigger] = useState<NodeTypes>("timer");
   return (
     <Sheet open={true}>
@@ -83,6 +95,7 @@ export const TriggerSheet = ({
         {selectedTrigger === "timer" && 
         <div className="grid gap-3">
            <Label className="capitalize">enter a time to trigger a flow every time</Label>
+           
            <Input type="number" onChange={(e)=> setMetaData(metadata => ({...metadata, time: Number(e.target.value)}))}/>
         </div>
         }
@@ -91,12 +104,80 @@ export const TriggerSheet = ({
         {selectedTrigger === "price-trigger" && 
         <div className="grid gap-3">
           <div className="grid gap-3">
-            <Label>Enter Triggr Price</Label>
-            <Input type="number" onChange={ (e) => setMetaData(metadata=>({...metadata, price: Number(e.target.value)}))}/>
+            <Label>Enter Trigger Price</Label>
+            <Input type="number" onChange={ (e) => setMetaData((metadata: any)=>({...metadata, price: Number(e.target.value)}))}/>
           </div>
-          
-          
-          </div>}
+        </div>}
+
+        {selectedTrigger === "webhook" && 
+        <div className="grid gap-3">
+          <div className="grid gap-2">
+            <Label>Endpoint Path</Label>
+            <Input 
+              placeholder="/webhook/my-endpoint" 
+              onChange={(e) => setMetaData((metadata: any) => ({ ...metadata, endpoint: e.target.value }))}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label>HTTP Method</Label>
+            <Select value={metadata.method} onValueChange={(value) => setMetaData((metadata: any) => ({ ...metadata, method: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="GET">GET</SelectItem>
+                <SelectItem value="POST">POST</SelectItem>
+                <SelectItem value="PUT">PUT</SelectItem>
+                <SelectItem value="DELETE">DELETE</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>}
+
+        {selectedTrigger === "schedule" && 
+        <div className="grid gap-3">
+          <div className="grid gap-2">
+            <Label>Schedule Type</Label>
+            <Select value={metadata.type} onValueChange={(value) => setMetaData((metadata: any) => ({ ...metadata, type: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="interval">Interval</SelectItem>
+                <SelectItem value="cron">Cron Expression</SelectItem>
+                <SelectItem value="once">Once</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {metadata.type === "interval" && (
+            <div className="grid gap-2">
+              <Label>Interval (seconds)</Label>
+              <Input 
+                type="number"
+                placeholder="60" 
+                onChange={(e) => setMetaData((metadata: any) => ({ ...metadata, interval: Number(e.target.value) }))}
+              />
+            </div>
+          )}
+          {metadata.type === "cron" && (
+            <div className="grid gap-2">
+              <Label>Cron Expression</Label>
+              <Input 
+                placeholder="0 * * * *" 
+                onChange={(e) => setMetaData((metadata: any) => ({ ...metadata, cronExpression: e.target.value }))}
+              />
+            </div>
+          )}
+          {metadata.type === "once" && (
+            <div className="grid gap-2">
+              <Label>Date & Time</Label>
+              <Input 
+                type="datetime-local"
+                onChange={(e) => setMetaData((metadata: any) => ({ ...metadata, datetime: e.target.value }))}
+              />
+            </div>
+          )}
+        </div>}
        </div>
         <SheetFooter>
           <Button type="submit" onClick={()=> onSelect(

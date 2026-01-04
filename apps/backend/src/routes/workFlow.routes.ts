@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {authMiddleware} from '../middleware/auth.middleware'
-import { createWorkflow, getWorkflow, nodes, getAllWorkflow } from "../controllers/workFlow.controller";
+import { createWorkflow, getWorkflow, updateWorkflow, nodes, getAllWorkflow, executeWorkflow, executeNode, handleWebhook } from "../controllers/workFlow.controller";
 
 
 const router = Router()
@@ -8,5 +8,10 @@ const router = Router()
 router.post("/workflow", authMiddleware, createWorkflow)
 router.get("/workflow", authMiddleware, getAllWorkflow)
 router.get("/workflow/:workflowId", authMiddleware, getWorkflow)
+router.put("/workflow/:workflowId", authMiddleware, updateWorkflow)
+router.post("/workflow/:workflowId/execute", authMiddleware, executeWorkflow)
+router.post("/execute-node", authMiddleware, executeNode)
 router.get("/nodes", authMiddleware, nodes)
+router.all(/^\/webhooks\/.*$/, handleWebhook)
+
 export default router

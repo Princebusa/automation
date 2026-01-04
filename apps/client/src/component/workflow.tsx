@@ -1,6 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import {ActionSheet} from "./actionSheet"
 import {Mail} from '../nodes/actions/mail'
+import {HttpRequest} from '../nodes/actions/HttpRequest'
+import {FileSystem} from '../nodes/actions/FileSystem'
+import {DataTransform} from '../nodes/actions/DataTransform'
+import {GoogleSheets} from '../nodes/actions/GoogleSheets'
 import type { NodeTypes } from "comman";
 import {
   ReactFlow,
@@ -12,18 +16,20 @@ import "@xyflow/react/dist/style.css";
 import { TriggerSheet } from "./TriggerSheet";
 import { Timer } from "@/nodes/triggers/Timer";
 import {Trigger} from "@/nodes/triggers/Trigger"
+import {Webhook} from "@/nodes/triggers/Webhook"
+import {Schedule} from "@/nodes/triggers/Schedule"
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
-import { apiGetWorkflow } from "@/lib/api";
+import { apiGetWorkflow, apiUpdateWorkflow } from "@/lib/api";
 
 
 
 interface NodeType {
   type: NodeTypes;
   data: {
-    kind: "action" | "trigger";
+    kind: "ACTION" | "TRIGGER";
     metadata: MetaData;
   };
   id: string;
@@ -39,7 +45,13 @@ interface Edge {
 const nodeTypes = {
   "timer": Timer,
   "price-trigger": Trigger,
-  "mail": Mail
+  "webhook": Webhook,
+  "schedule": Schedule,
+  "mail": Mail,
+  "http-request": HttpRequest,
+  "file-system": FileSystem,
+  "data-transform": DataTransform,
+  "google-sheets": GoogleSheets
 };
 
 export default function workflow() {
@@ -50,10 +62,28 @@ export default function workflow() {
   const { workflowId } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleUpdateWorkflow = async () => {
+    if (!workflowId) return;
+    
+    setIsSaving(true);
+    try {
+      await apiUpdateWorkflow(workflowId, { nodes, edges });
+      setHasChanges(false);
+      alert('Workflow updated successfully!');
+    } catch (error) {
+      console.error('Failed to update workflow:', error);
+      alert('Failed to update workflow. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -125,13 +155,17 @@ export default function workflow() {
 console.log(nodes)
 console.log(edges)
   const onNodesChange = useCallback(
-    (changes: any) =>
-      setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
+    (changes: any) => {
+      setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot));
+      setHasChanges(true);
+    },
     []
   );
   const onEdgesChange = useCallback(
-    (changes: any) =>
-      setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
+    (changes: any) => {
+      setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot));
+      setHasChanges(true);
+    },
     []
   );
   const onConnect = useCallback(
@@ -162,7 +196,15 @@ if(!sh.isValid){
     <div style={{ width: "100vw", height: "100vh" }}>
       {JSON.stringify(nodes)}
       
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <Button
+          onClick={handleUpdateWorkflow}
+          disabled={!hasChanges || isSaving || isLoading}
+          variant="outline"
+          className="bg-green-600 text-white border-green-700 hover:bg-green-700 disabled:bg-gray-500"
+        >
+          {isSaving ? 'Saving...' : 'Update'}
+        </Button>
         <Button
           onClick={handleLogout}
           variant="outline"
@@ -191,7 +233,7 @@ if(!sh.isValid){
           id: nodeid,
           type,
           data:{
-             kind: "action",
+             kind: "ACTION",
             metadata,
            
           },
@@ -218,7 +260,7 @@ if(!sh.isValid){
                 id: Math.random().toString(),
                 type,
                 data: {
-                  kind: "trigger",
+                  kind: "TRIGGER",
 
                   metadata,
                 },
