@@ -25,7 +25,7 @@ export const createWorkflow = async (req: Request, res: Response) => {
 
 export const getWorkflow = async (req: Request, res: Response) => {
   const { workflowId } = req.params as { workflowId: string };
-  const workflow = await WorkFlow.findOne({ _id: workflowId, userId: req.userId });
+  const workflow = await WorkFlow.findOne({ _id: workflowId, userId: req.userId }).populate('nodes.nodeId');
 
   if (!workflow) {
     return res.status(400).json({ message: "workflow not found" });
@@ -52,13 +52,19 @@ export const updateWorkflow = async (req: Request, res: Response) => {
 
     // Convert frontend data to match database schema
     if (req.body.nodes) {
-      const convertedNodes = req.body.nodes.map((node: any) => ({
-        ...node,
-        data: {
-          ...node.data,
-          kind: node.data.kind.toUpperCase() === 'TRIGGER' ? 'TRIGGER' : 'ACTION'
+      const convertedNodes = await Promise.all(req.body.nodes.map(async (node: any) => {
+        const nodeModel = await Node.findOne({ title: node.type });
+    
+        return {
+          ...node,
+          data: {
+        ...node.data,
+        kind: node.data.kind.toUpperCase() === 'TRIGGER' ? 'TRIGGER' : 'ACTION',
+          },
+          nodeId: nodeModel?._id
         }
       }));
+  
       //@ts-ignore
       workflow.nodes = convertedNodes;
     }
@@ -82,6 +88,28 @@ export const nodes = async (req: Request, res: Response)=>{
   const node = await Node.find()
   return res.json(node)
 }
+
+export const addNode = async (req: Request, res: Response) => {
+  try {
+    const { title, description, type, credentialsType } = req.body;
+    
+    // Check if node already exists
+    const existingNode = await Node.findOne({ title });
+    if (existingNode) {
+      return res.status(400).json({ message: "Node with this title already exists" });
+    }
+    
+    const newNode = await Node.create({
+      title,
+      description,
+      type, // 'ACTION' or 'TRIGGER'
+    });
+    
+    return res.json(newNode);
+  } catch (error: any) {
+    return res.status(500).json({ message: "Failed to add node", error: error.message });
+  }
+};
 
 // Execute a workflow
 export const executeWorkflow = async (req: Request, res: Response) => {

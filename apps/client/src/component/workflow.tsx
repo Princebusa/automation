@@ -95,6 +95,7 @@ export default function workflow() {
         setIsLoading(true);
         setLoadError(null);
         const wfRaw = await apiGetWorkflow(workflowId);
+        console.log("Fetched workflow data:", wfRaw);
         const wf = Array.isArray(wfRaw)
           ? wfRaw.find((x: any) => String(x?._id) === String(workflowId)) ?? wfRaw[0]
           : wfRaw;
@@ -102,22 +103,15 @@ export default function workflow() {
         // Backend stores nodes as { nodeId, data: { kind: "ACTION"|"TRIGGER" }, ... }
         const mappedNodes: NodeType[] = (wf?.nodes || []).map((n: any) => ({
           id: String(n.id),
-          // backend `nodeId` is often a DB ObjectId, which won't match ReactFlow nodeTypes keys.
-          // Use a safe fallback based on kind so something renders.
-          type: ((n.type as NodeTypes) ||
-            (typeof n.nodeId === "string" && ["mail", "timer", "price-trigger", "tr", "chat"].includes(n.nodeId)
-              ? (n.nodeId as NodeTypes)
-              : (String(n?.data?.kind || "").toUpperCase().includes("TRIGGER")
-                ? ("timer" as NodeTypes)
-                : ("mail" as NodeTypes)))) as NodeTypes,
+          type: n.nodeId.title,
           position: n.position,
           data: {
             kind:
               String(n?.data?.kind || "")
                 .toLowerCase()
                 .includes("trigger")
-                ? "trigger"
-                : "action",
+                ? "TRIGGER"
+                : "ACTION",
             metadata: n?.data?.metadata,
           },
         }));
@@ -152,8 +146,7 @@ export default function workflow() {
        }
        parentNode: string
   } | null>(null)
-console.log(nodes)
-console.log(edges)
+
   const onNodesChange = useCallback(
     (changes: any) => {
       setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot));
@@ -179,7 +172,7 @@ console.log(edges)
     {
 
 if(!sh.isValid){
-  console.log(sh)
+ 
   setAction({
     position: {
       x: sh.from.x + 100,
