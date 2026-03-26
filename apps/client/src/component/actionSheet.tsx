@@ -59,6 +59,21 @@ const SUPPORTED_ACTION = [
     title: "Google Sheets",
     description: "Read/write to Google Sheets",
   },
+  {
+    id: "openai",
+    title: "OpenAI",
+    description: "Generate responses using GPT-4",
+  },
+  {
+    id: "slack",
+    title: "Slack",
+    description: "Send a message to a Slack channel",
+  },
+  {
+    id: "github",
+    title: "GitHub",
+    description: "Create an issue in a repository",
+  },
 ];
 
 export const ActionSheet = ({
@@ -71,10 +86,10 @@ export const ActionSheet = ({
  const [selectedAction, setSelectedAction] = useState<any>()
   return (
     <Sheet open={true}>
-      <SheetContent className="sm:max-w-md border-l-4 border-l-black bg-blue-300 shadow-none font-sans overflow-y-auto w-full max-h-screen">
-        <SheetHeader className="mb-6">
-          <SheetTitle className="text-3xl font-black uppercase tracking-tight text-black">Create an Action</SheetTitle>
-          <SheetDescription className="text-black/80 font-bold uppercase">
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Create an Action</SheetTitle>
+          <SheetDescription>
             Select an action node and configure its parameters
           </SheetDescription>
         </SheetHeader>
@@ -292,11 +307,102 @@ export const ActionSheet = ({
             </div>
           </div>
         )}
+        {/* OpenAI Configuration */}
+        {selectedAction === "openai" && (
+          <div className="grid gap-3 p-4 border-4 border-black bg-green-300 shadow-[4px_4px_0_0_#000] mt-4">
+            <h3 className="font-black uppercase">🤖 OpenAI Setup</h3>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">OpenAI API Key</Label>
+              <Input 
+                type="password"
+                placeholder="sk-..." 
+                onChange={(e) => setMetaData(prev => ({ ...prev, apiKey: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">Model</Label>
+              <Input 
+                placeholder="gpt-4o" 
+                defaultValue="gpt-4o"
+                onChange={(e) => setMetaData(prev => ({ ...prev, model: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">Prompt</Label>
+              <Input 
+                placeholder="Write a poem about automation" 
+                onChange={(e) => setMetaData(prev => ({ ...prev, prompt: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+          </div>
+        )}
 
-        
+        {/* Slack Configuration */}
+        {selectedAction === "slack" && (
+          <div className="grid gap-3 p-4 border-4 border-black bg-purple-300 shadow-[4px_4px_0_0_#000] mt-4">
+            <h3 className="font-black uppercase">💬 Slack Setup</h3>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">Webhook URL</Label>
+              <Input 
+                type="password"
+                placeholder="https://hooks.slack.com/services/..." 
+                onChange={(e) => setMetaData(prev => ({ ...prev, webhookUrl: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">Message</Label>
+              <Input 
+                placeholder="Workflow executed successfully!" 
+                onChange={(e) => setMetaData(prev => ({ ...prev, message: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+          </div>
+        )}
 
-
-        
+        {/* GitHub Configuration */}
+        {selectedAction === "github" && (
+          <div className="grid gap-3 p-4 border-4 border-black bg-gray-300 shadow-[4px_4px_0_0_#000] mt-4">
+            <h3 className="font-black uppercase">🐙 GitHub Setup</h3>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">Personal Access Token</Label>
+              <Input 
+                type="password"
+                placeholder="ghp_..." 
+                onChange={(e) => setMetaData(prev => ({ ...prev, token: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">Repository (owner/repo)</Label>
+              <Input 
+                placeholder="princebusa/n8n-clone" 
+                onChange={(e) => setMetaData(prev => ({ ...prev, ownerRepo: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">Issue Title</Label>
+              <Input 
+                placeholder="Automated Issue" 
+                onChange={(e) => setMetaData(prev => ({ ...prev, title: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label className="font-bold uppercase text-xs">Issue Body</Label>
+              <Input 
+                placeholder="Created by workflow..." 
+                onChange={(e) => setMetaData(prev => ({ ...prev, body: e.target.value }))}
+                className="border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] bg-white font-bold"
+              />
+            </div>
+          </div>
+        )}
        </div>
         <SheetFooter className="mt-8 flex flex-col sm:flex-col gap-4">
           <Button 

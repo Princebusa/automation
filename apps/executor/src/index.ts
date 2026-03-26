@@ -87,8 +87,51 @@ async function executeNodeLogic(node: any, inputData: any) {
   const type = node.nodeId?.title?.toLowerCase() || 'unknown';
   const meta = node.data?.metadata || {};
   
+  if (type === 'openai') {
+     console.log(`[OPENAI] Generating response with model ${meta.model || 'gpt-4o'}`);
+     if (!meta.apiKey) throw new Error("Missing OpenAI API Key");
+     
+     const res = await axios.post('https://api.openai.com/v1/chat/completions', {
+         model: meta.model || "gpt-4o",
+         messages: [{ role: "user", content: meta.prompt || "Hello" }]
+     }, {
+         headers: {
+             'Authorization': `Bearer ${meta.apiKey}`,
+             'Content-Type': 'application/json'
+         }
+     });
+     return res.data;
+  }
+
+  if (type === 'slack') {
+     console.log(`[SLACK] Sending message to webhook...`);
+     if (!meta.webhookUrl) throw new Error("Missing Slack Webhook URL");
+     
+     const res = await axios.post(meta.webhookUrl, {
+         text: meta.message || "Hello from n8n-clone workflow!"
+     });
+     return res.data;
+  }
+
+  if (type === 'github') {
+     console.log(`[GITHUB] Creating issue in ${meta.ownerRepo}`);
+     if (!meta.token || !meta.ownerRepo) throw new Error("Missing GitHub Token or Repo");
+     
+     const res = await axios.post(`https://api.github.com/repos/${meta.ownerRepo}/issues`, {
+         title: meta.title || "Automated Issue",
+         body: meta.body || "Created via n8n-clone"
+     }, {
+         headers: {
+             'Authorization': `Bearer ${meta.token}`,
+             'Accept': 'application/vnd.github.v3+json',
+             'User-Agent': 'n8n-clone-automation'
+         }
+     });
+     return res.data;
+  }
+
   // Real execution logic!
-  if (type === 'http-request') {
+  if (type === 'http request' || type === 'http-request') {
      const method = meta.method || "GET";
      console.log(`[HTTP-REQUEST] Executing ${method} to ${meta.url}`);
      // Simulate slight delay so UI animation can be seen
@@ -102,9 +145,8 @@ async function executeNodeLogic(node: any, inputData: any) {
      return res.data;
   }
   
-  if (type === 'mail') {
+  if (type === 'mail' || type === 'send email') {
      console.log(`[MAIL] Sending email to Dummy`);
-     // Real nodemailer code could go here, but omitted to prevent spam
      // We will sleep to simulate SMPT sending latency
      await sleep(2000);
      return { success: true, emailSent: true };

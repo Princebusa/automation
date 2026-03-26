@@ -5,6 +5,9 @@ import {HttpRequest} from '../nodes/actions/HttpRequest'
 import {FileSystem} from '../nodes/actions/FileSystem'
 import {DataTransform} from '../nodes/actions/DataTransform'
 import {GoogleSheets} from '../nodes/actions/GoogleSheets'
+import { OpenAI } from '../nodes/actions/OpenAI'
+import { Slack } from '../nodes/actions/Slack'
+import { GitHub } from '../nodes/actions/GitHub'
 import type { NodeTypes } from "comman";
 import {
   ReactFlow,
@@ -53,7 +56,10 @@ const nodeTypes = {
   "http-request": HttpRequest,
   "file-system": FileSystem,
   "data-transform": DataTransform,
-  "google-sheets": GoogleSheets
+  "google-sheets": GoogleSheets,
+  "openai": OpenAI,
+  "slack": Slack,
+  "github": GitHub
 };
 
 export default function workflow() {

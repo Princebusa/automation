@@ -9,28 +9,29 @@ export type HttpRequestMetadata = {
   queryParams?: Record<string, string>;
 }
 
-export const HttpRequest = ({ data }: {
-  data: {
-    metadata: HttpRequestMetadata
-  }
-}) => {
-  const method = data.metadata.method || 'GET';
-  const url = data.metadata.url || 'No URL set';
+export const HttpRequest = ({ id, data }: { id: string, data: { metadata: HttpRequestMetadata, status?: any } }) => {
+  const method = data.metadata?.method || 'GET';
+  const url = data.metadata?.url || 'No URL set';
   
-  // Truncate URL if too long
-  const displayUrl = url.length > 30 ? url.substring(0, 27) + '...' : url;
+  const displayUrl = url.length > 50 ? url.substring(0, 47) + '...' : url;
 
   return (
-    <NodeWrapper status={(data as any)?.status}>
-    <div className="border py-2 px-4 rounded-xs bg-blue-50 border-blue-200 min-w-[120px]">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-blue-700">{method}</span>
-        <span className="text-xs text-gray-600 truncate">{displayUrl}</span>
+    <NodeWrapper status={data?.status} nodeId={id}>
+      <div className="bg-yellow-300 w-80 min-h-[100px] flex flex-col">
+        <div className="bg-black text-white p-3 font-black uppercase tracking-tight flex items-center justify-between">
+          <span>🌐 HTTP Request</span>
+        </div>
+        <div className="p-4 flex-1">
+           <div className="flex items-center gap-2 mb-2">
+             <span className="bg-white border-2 border-black font-black px-2 py-1 shadow-[2px_2px_0_0_#000]">{method}</span>
+           </div>
+           <div className="text-xs font-bold bg-white border-2 border-black p-2 truncate shadow-[2px_2px_0_0_#000]">
+             {displayUrl}
+           </div>
+        </div>
+        <Handle type="source" position={Position.Right} className="w-6 h-6 bg-black border-4 border-white rounded-none -right-3" />
+        <Handle type="target" position={Position.Left} className="w-6 h-6 bg-black border-4 border-white rounded-none -left-3" />
       </div>
-      <div className="text-xs text-gray-500 mt-1">HTTP Request</div>
-      <Handle type="source" position={Position.Right} />
-      <Handle type="target" position={Position.Left} />
-    </div>
-      </NodeWrapper>
+    </NodeWrapper>
   );
 }
