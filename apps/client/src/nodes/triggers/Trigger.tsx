@@ -1,3 +1,4 @@
+import { NodeWrapper } from "@/component/NodeWrapper";
 import { Handle, Position } from "@xyflow/react";
 
 export type PriceTriggerMetadata ={
@@ -15,11 +16,13 @@ export const Trigger =({data, isConnectable}: {
 
     console.log(data.metadata)
   
-    return(
+    return (
+    <NodeWrapper status={(data as any)?.status}>
 <div className="border py-1 px-4 rounded-xs">
      {data.metadata.assets}<br/>
      {data.metadata.price}
     <Handle type="source" position={Position.Right}></Handle>
 </div>
-    )
+        </NodeWrapper>
+  )
 }

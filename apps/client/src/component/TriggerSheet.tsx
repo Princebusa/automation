@@ -64,11 +64,11 @@ export const TriggerSheet = ({
   const [selectedTrigger, setSelectedTrigger] = useState<NodeTypes>("timer");
   return (
     <Sheet open={true}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Create a Trigger</SheetTitle>
-          <SheetDescription>
-            Enter a Following Details to Create a Init Node 
+      <SheetContent className="sm:max-w-md border-l-4 border-l-black bg-white shadow-none font-sans overflow-y-auto">
+        <SheetHeader className="mb-6">
+          <SheetTitle className="text-3xl font-black uppercase tracking-tight text-black">Create a Trigger</SheetTitle>
+          <SheetDescription className="text-black/80 font-bold uppercase">
+            Enter the details to create an initial node
           </SheetDescription>
         </SheetHeader>
        <div className="px-3 grid gap-5">
@@ -179,12 +179,14 @@ export const TriggerSheet = ({
           )}
         </div>}
        </div>
-        <SheetFooter>
-          <Button type="submit" onClick={()=> onSelect(
-            selectedTrigger,
-            metadata
-          )}>Save changes</Button>
-         
+        <SheetFooter className="mt-8">
+          <Button 
+             type="submit" 
+             className="neo-btn rounded-none bg-yellow-400 text-black w-full py-6 text-xl font-black uppercase hover:bg-yellow-300"
+             onClick={()=> onSelect(selectedTrigger, metadata)}
+          >
+            Save changes
+          </Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>

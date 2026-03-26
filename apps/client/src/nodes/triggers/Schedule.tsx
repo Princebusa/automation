@@ -1,3 +1,4 @@
+import { NodeWrapper } from "@/component/NodeWrapper";
 import { Handle, Position } from "@xyflow/react";
 
 export type ScheduleMetadata = {
@@ -29,6 +30,7 @@ export const Schedule = ({ data }: {
   };
 
   return (
+    <NodeWrapper status={(data as any)?.status}>
     <div className="border py-2 px-4 rounded-xs bg-indigo-50 border-indigo-200 min-w-[120px]">
       <div className="flex items-center gap-2">
         <span className="text-lg">⏰</span>
@@ -38,5 +40,6 @@ export const Schedule = ({ data }: {
       <div className="text-xs text-gray-500 mt-1">Schedule</div>
       <Handle type="source" position={Position.Right} />
     </div>
+      </NodeWrapper>
   );
 }

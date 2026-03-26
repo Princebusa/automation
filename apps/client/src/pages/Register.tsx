@@ -17,7 +17,6 @@ export default function Register() {
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       navigate('/dashboard');
@@ -52,22 +51,26 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-xl shadow-2xl border border-gray-700">
+    <div className="min-h-screen flex items-center justify-center bg-yellow-50 p-6 pt-16 selection:bg-blue-400 selection:text-white">
+      <Link to="/" className="absolute top-8 left-8 font-black text-3xl tracking-tighter hover:bg-black hover:text-white transition-colors p-2">
+        n8n<span className="text-pink-500">.clone</span>
+      </Link>
+      
+      <div className="w-full max-w-md p-10 space-y-8 bg-blue-300 border-4 border-black shadow-[8px_8px_0_0_#000]">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white">Create Account</h1>
-          <p className="text-gray-400 mt-2">Sign up to get started</p>
+          <h1 className="text-5xl font-black uppercase tracking-tight">Register</h1>
+          <p className="text-black font-bold mt-2 text-lg">Create a new account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500 rounded-lg text-red-400 text-sm">
+            <div className="p-4 bg-white border-4 border-black font-bold text-red-600 shadow-[4px_4px_0_0_#000]">
               {error}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="username" className="text-gray-200">Username</Label>
+            <Label htmlFor="username" className="font-bold text-lg uppercase">Username</Label>
             <Input
               id="username"
               type="text"
@@ -75,12 +78,12 @@ export default function Register() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+              className="bg-white border-4 border-black shadow-[4px_4px_0_0_#000] p-6 text-lg font-bold placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all rounded-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-200">Email</Label>
+            <Label htmlFor="email" className="font-bold text-lg uppercase">Email</Label>
             <Input
               id="email"
               type="email"
@@ -88,12 +91,12 @@ export default function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+              className="bg-white border-4 border-black shadow-[4px_4px_0_0_#000] p-6 text-lg font-bold placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all rounded-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-gray-200">Password</Label>
+            <Label htmlFor="password" className="font-bold text-lg uppercase">Password</Label>
             <Input
               id="password"
               type="password"
@@ -101,12 +104,12 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+              className="bg-white border-4 border-black shadow-[4px_4px_0_0_#000] p-6 text-lg font-bold placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all rounded-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-gray-200">Confirm Password</Label>
+            <Label htmlFor="confirmPassword" className="font-bold text-lg uppercase">Confirm</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -114,22 +117,22 @@ export default function Register() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+              className="bg-white border-4 border-black shadow-[4px_4px_0_0_#000] p-6 text-lg font-bold placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all rounded-none"
             />
           </div>
 
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className={`w-full bg-yellow-400 text-black py-8 text-2xl font-black uppercase rounded-none border-4 border-black ${isLoading ? 'opacity-50' : 'shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all'}`}
           >
-            {isLoading ? 'Creating account...' : 'Sign Up'}
+            {isLoading ? 'Creating...' : 'Sign Up'}
           </Button>
         </form>
 
-        <div className="text-center text-sm text-gray-400">
+        <div className="text-center font-bold text-lg">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+          <Link to="/login" className="text-black underline decoration-4 underline-offset-4 hover:bg-black hover:text-white transition-colors p-1">
             Sign in
           </Link>
         </div>

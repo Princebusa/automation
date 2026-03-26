@@ -1,15 +1,16 @@
 import { apiGetAllWorkflows, apiCreateWorkflow, apiExecuteWorkflow } from "../lib/api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/AuthContext';
+import { Plus, Play, ExternalLink, LogOut } from 'lucide-react';
 
 export default function dashboard() {
-  const {logout} = useAuth()
+  const { logout } = useAuth();
   const [data, setData] = useState<any>([]);
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState<string | null>(null);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   
   useEffect(() => {
     apiGetAllWorkflows().then((users) => setData(users));
@@ -47,71 +48,81 @@ export default function dashboard() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2>My Workflows</h2>
-        <div>
+    <div className="min-h-screen bg-yellow-50 text-black p-6 md:p-12 font-sans selection:bg-pink-500 selection:text-white">
+      {/* Top Navbar */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-6 bg-white border-4 border-black p-6 shadow-[8px_8px_0_0_#000]">
+        <h2 className="text-4xl font-black uppercase tracking-tight flex items-center gap-3">
+          n8n<span className="text-pink-500">.clone</span> <span className="text-2xl text-gray-500 bg-gray-200 px-2 py-1 border-2 border-black">Dashboard</span>
+        </h2>
+        
+        <div className="flex items-center gap-4">
           <button 
             onClick={createNewWorkflow}
             disabled={loading}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: loading ? '#ccc' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              marginRight: '10px'
-            }}
+            className={`flex items-center gap-2 px-6 py-3 font-bold uppercase border-4 border-black text-lg
+              ${loading ? 'bg-gray-300 opacity-75' : 'bg-blue-400 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all'}`}
           >
-            {loading ? 'Creating...' : 'Create New Workflow'}
+            <Plus className="w-6 h-6" /> {loading ? 'Creating...' : 'New Workflow'}
           </button>
-          <button onClick={()=>logout()}>Logout</button>
+          
+          <button 
+            onClick={() => logout()}
+            className="flex items-center gap-2 px-6 py-3 bg-red-400 font-bold uppercase border-4 border-black text-lg hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all"
+          >
+            <LogOut className="w-6 h-6" /> Logout
+          </button>
         </div>
       </div>
       
+      {/* Main Content Area */}
       {data.length === 0 ? (
-        <p>No workflows found. Create your first workflow!</p>
+        <div className="bg-white border-4 border-black p-12 text-center shadow-[12px_12px_0_0_#000] max-w-2xl mx-auto mt-24">
+          <div className="text-8xl mb-6">🏜️</div>
+          <h3 className="text-4xl font-black uppercase mb-4">It's quiet here.</h3>
+          <p className="text-xl font-bold mb-8">You haven't built any workflows yet. Click the shiny blue button to start automating!</p>
+        </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {data.map((itm: any, key: number) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {data.map((itm: any, index: number) => {
+            // Cycle through vibrant background colors for each card
+            const bgColors = ['bg-pink-300', 'bg-blue-300', 'bg-yellow-300', 'bg-green-300'];
+            const cardBg = bgColors[index % bgColors.length];
+
             return (
-              <div key={key} style={{ 
-                border: '1px solid #ddd', 
-                borderRadius: '8px', 
-                padding: '20px',
-                backgroundColor: '#f9f9f9'
-              }}>
-                <h3>{itm.name || `Workflow ${key + 1}`}</h3>
-                <p>ID: {itm._id}</p>
-                <div style={{ marginTop: '15px' }}>
+              <div 
+                key={itm._id || index} 
+                className={`${cardBg} border-4 border-black p-6 shadow-[8px_8px_0_0_#000] flex flex-col justify-between hover:-translate-y-2 hover:-translate-x-2 hover:shadow-[16px_16px_0_0_#000] transition-all duration-200 cursor-default`}
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-3xl font-black uppercase leading-tight">{itm.name || `Workflow ${index + 1}`}</h3>
+                    <div className="bg-white border-4 border-black px-2 py-1 text-sm font-bold shadow-[2px_2px_0_0_#000]">
+                       {itm.nodes?.length || 0} Nodes
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold bg-white/50 border-2 border-black inline-block px-2 py-1 mb-6 truncate max-w-full">
+                    ID: {itm._id}
+                  </p>
+                </div>
+                
+                <div className="flex gap-4 mt-4">
                   <button 
                     onClick={() => navigate(`/workflow/${itm._id}`)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#28a745',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      marginRight: '10px'
-                    }}
+                    className="flex-1 flex justify-center items-center gap-2 py-3 bg-white border-4 border-black font-black uppercase hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all"
                   >
-                    Open
+                    <ExternalLink className="w-5 h-5" /> Open
                   </button>
                   <button 
                     onClick={() => executeWorkflow(itm._id)}
                     disabled={executing === itm._id}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: executing === itm._id ? '#6c757d' : '#007bff',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: executing === itm._id ? 'not-allowed' : 'pointer'
-                    }}
+                    className={`flex-1 flex justify-center items-center gap-2 py-3 border-4 border-black font-black uppercase
+                      ${executing === itm._id ? 'bg-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all'}`}
                   >
-                    {executing === itm._id ? 'Executing...' : 'Execute'}
+                    {executing === itm._id ? (
+                      'Running...'
+                    ) : (
+                      <><Play className="w-5 h-5 fill-white" /> Run</>
+                    )}
                   </button>
                 </div>
               </div>

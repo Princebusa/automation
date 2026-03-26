@@ -1,3 +1,4 @@
+import { NodeWrapper } from "@/component/NodeWrapper";
 import { Handle, Position } from "@xyflow/react";
 
 export type GoogleSheetsMetadata = {
@@ -27,6 +28,7 @@ export const GoogleSheets = ({ data }: {
   };
 
   return (
+    <NodeWrapper status={(data as any)?.status}>
     <div className="border py-2 px-4 rounded-xs bg-green-50 border-green-200 min-w-[120px]">
       <div className="flex items-center gap-2">
         <span>{getOperationIcon(operation)}</span>
@@ -37,5 +39,6 @@ export const GoogleSheets = ({ data }: {
       <Handle type="source" position={Position.Right} />
       <Handle type="target" position={Position.Left} />
     </div>
+      </NodeWrapper>
   );
 }

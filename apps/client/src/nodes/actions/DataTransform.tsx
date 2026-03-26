@@ -1,3 +1,4 @@
+import { NodeWrapper } from "@/component/NodeWrapper";
 import { Handle, Position } from "@xyflow/react";
 
 export type DataTransformMetadata = {
@@ -27,6 +28,7 @@ export const DataTransform = ({ data }: {
   };
 
   return (
+    <NodeWrapper status={(data as any)?.status}>
     <div className="border py-2 px-4 rounded-xs bg-purple-50 border-purple-200 min-w-[120px]">
       <div className="flex items-center gap-2">
         <span>{getOperationIcon(operation)}</span>
@@ -36,5 +38,6 @@ export const DataTransform = ({ data }: {
       <Handle type="source" position={Position.Right} />
       <Handle type="target" position={Position.Left} />
     </div>
+      </NodeWrapper>
   );
 }

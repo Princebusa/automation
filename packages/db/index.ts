@@ -91,16 +91,6 @@ const WorkFlowSchema = new Schema({
 });
 
 
-const CredentialsSchema = new Schema({
-    title:{
-        type: String,
-        required: true
-    },
-    required: {
-        type: Boolean,
-        required: true
-    }
-})
 
 const NodesSchema = new Schema({
     title:{
@@ -116,7 +106,7 @@ const NodesSchema = new Schema({
         enum: ["ACTION", "TRIGGER"],
         required: true
     },
-    credentialsType: [CredentialsSchema],
+
 
 })
 

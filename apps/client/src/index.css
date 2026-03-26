@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -111,10 +112,19 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-yellow-50 text-black;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  
+  /* Adding some quick brutalist utility classes if supported by the compiler, otherwise arbitrary bounds handle this nicely */
+  .neo-shadow {
+    box-shadow: 4px 4px 0px 0px #000000;
+  }
+  .neo-shadow-lg {
+    box-shadow: 8px 8px 0px 0px #000000;
+  }
+  .neo-btn {
+    @apply border-2 border-black font-bold transition-all hover:-translate-y-1 hover:-translate-x-1 active:translate-y-0 active:translate-x-0 active:shadow-none hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
   }
 }

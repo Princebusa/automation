@@ -1,4 +1,4 @@
-import { WorkFlow, Node } from "db/client";
+import { WorkFlow, Node, Execution } from "db/client";
 import { Response, Request } from "express";
 import { CreateWorkflowSchema } from "comman/types";
 import axios from 'axios';
@@ -117,33 +117,34 @@ export const executeWorkflow = async (req: Request, res: Response) => {
     const { workflowId } = req.params;
     const userId = req.userId;
 
-    const workflow = await WorkFlow.findOne({ _id: workflowId, userId });
-    
+    const workflow = await WorkFlow.findOne({ _id: workflowId, userId }).populate('nodes.nodeId');
+
     if (!workflow) {
       return res.status(404).json({ message: "Workflow not found" });
     }
 
-    // Convert database nodes to the expected format
+    // Send nodes with type = node title so executor can run each node by kind
     const nodes = workflow.nodes.map((node: any) => ({
       id: node.id,
-      type: node.nodeId?.toString() || node.type,
-      nodeId: node.nodeId?.toString(),
+      type: node.nodeId?.title ?? node.nodeId?.toString?.() ?? 'timer',
+      nodeId: node.nodeId ? { title: node.nodeId.title } : { title: 'timer' },
       data: node.data,
       position: node.position,
       credentials: node.credentials
     }));
 
-    // Call executor service
-    const executorResponse = await axios.post('http://localhost:4001/execute-workflow', {
-      nodes,
-      edges: workflow.edges
+    // Create a new execution in the DB with status PENDING for the Worker to pick up
+    const execution = await Execution.create({
+      workflowId: workflow._id,
+      status: "PENDING",
+      starTime: new Date()
     });
 
-    return res.json(executorResponse.data);
+    return res.json({ success: true, executionId: execution._id, message: "Execution queued successfully" });
   } catch (error: any) {
-    return res.status(500).json({ 
-      message: "Workflow execution failed", 
-      error: error.message 
+    return res.status(500).json({
+      message: "Workflow execution failed",
+      error: error.message
     });
   }
 }
@@ -157,8 +158,8 @@ export const executeNode = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Node type and metadata are required" });
     }
 
-    // Call executor service
-    const executorResponse = await axios.post('http://localhost:4001/execute-node', {
+    const executorUrl = process.env.EXECUTOR_URL || 'http://localhost:4001';
+    const executorResponse = await axios.post(`${executorUrl}/execute-node`, {
       nodeType,
       metadata
     });
@@ -171,6 +172,33 @@ export const executeNode = async (req: Request, res: Response) => {
     });
   }
 }
+
+// Receive status updates from the executor and broadcast via WebSocket
+export const updateNodeStatus = async (req: Request, res: Response) => {
+  try {
+    const { workflowId, nodeId, status } = req.body;
+    
+    // Broadcast immediately
+    const rooms = req.app.get('wssRooms');
+    if (rooms && rooms.has(workflowId)) {
+      const clients = rooms.get(workflowId);
+      clients.forEach((client: any) => {
+        if (client.readyState === 1) { // OPEN
+          client.send(JSON.stringify({
+            type: 'node-status-change',
+            workflowId,
+            nodeId,
+            status
+          }));
+        }
+      });
+    }
+
+    return res.json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 // Webhook endpoint
 export const handleWebhook = async (req: Request, res: Response) => {

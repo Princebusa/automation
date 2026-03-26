@@ -1,1 +1,1 @@
-export type NodeTypes = "mail" | "tr" | "chat" | "timer" | "price-trigger";
+export type NodeTypes = "mail" | "timer" | "price-trigger" | "webhook" | "schedule" | "http-request" | "file-system" | "data-transform" | "google-sheets";

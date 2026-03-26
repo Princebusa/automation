@@ -1,3 +1,4 @@
+import { NodeWrapper } from "@/component/NodeWrapper";
 import { Handle, Position } from "@xyflow/react";
 
 export type HttpRequestMetadata = {
@@ -20,6 +21,7 @@ export const HttpRequest = ({ data }: {
   const displayUrl = url.length > 30 ? url.substring(0, 27) + '...' : url;
 
   return (
+    <NodeWrapper status={(data as any)?.status}>
     <div className="border py-2 px-4 rounded-xs bg-blue-50 border-blue-200 min-w-[120px]">
       <div className="flex items-center gap-2">
         <span className="text-xs font-semibold text-blue-700">{method}</span>
@@ -29,5 +31,6 @@ export const HttpRequest = ({ data }: {
       <Handle type="source" position={Position.Right} />
       <Handle type="target" position={Position.Left} />
     </div>
+      </NodeWrapper>
   );
 }

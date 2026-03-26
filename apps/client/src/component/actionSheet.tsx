@@ -71,10 +71,10 @@ export const ActionSheet = ({
  const [selectedAction, setSelectedAction] = useState<any>()
   return (
     <Sheet open={true}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Create an Action</SheetTitle>
-          <SheetDescription>
+      <SheetContent className="sm:max-w-md border-l-4 border-l-black bg-blue-300 shadow-none font-sans overflow-y-auto w-full max-h-screen">
+        <SheetHeader className="mb-6">
+          <SheetTitle className="text-3xl font-black uppercase tracking-tight text-black">Create an Action</SheetTitle>
+          <SheetDescription className="text-black/80 font-bold uppercase">
             Select an action node and configure its parameters
           </SheetDescription>
         </SheetHeader>
@@ -298,18 +298,19 @@ export const ActionSheet = ({
 
         
        </div>
-        <SheetFooter>
-          <Button type="submit" onClick={()=> onSelect(
-            selectedAction,
-            metadata
-          )}>Save changes</Button>
+        <SheetFooter className="mt-8 flex flex-col sm:flex-col gap-4">
+          <Button 
+            type="submit" 
+            className="neo-btn rounded-none bg-yellow-400 text-black w-full py-6 text-xl font-black uppercase hover:bg-yellow-300"
+            onClick={()=> onSelect(selectedAction, metadata)}
+          >
+            Save changes
+          </Button>
           <SheetClose asChild>
-            <Button>
-              close
+            <Button className="neo-btn rounded-none bg-white text-black w-full py-4 text-lg font-bold uppercase hover:bg-gray-100">
+              Close
             </Button>
-            
           </SheetClose>
-         
         </SheetFooter>
       </SheetContent>
     </Sheet>
