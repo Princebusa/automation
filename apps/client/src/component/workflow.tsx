@@ -2,12 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import {ActionSheet} from "./actionSheet"
 import {Mail} from '../nodes/actions/mail'
 import {HttpRequest} from '../nodes/actions/HttpRequest'
-import {FileSystem} from '../nodes/actions/FileSystem'
-import {DataTransform} from '../nodes/actions/DataTransform'
-import {GoogleSheets} from '../nodes/actions/GoogleSheets'
-import { OpenAI } from '../nodes/actions/OpenAI'
-import { Slack } from '../nodes/actions/Slack'
-import { GitHub } from '../nodes/actions/GitHub'
 import type { NodeTypes } from "comman";
 import {
   ReactFlow,
@@ -19,7 +13,6 @@ import {
 import "@xyflow/react/dist/style.css";
 import { TriggerSheet } from "./TriggerSheet";
 import { Timer } from "@/nodes/triggers/Timer";
-import {Trigger} from "@/nodes/triggers/Trigger"
 import {Webhook} from "@/nodes/triggers/Webhook"
 import {Schedule} from "@/nodes/triggers/Schedule"
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,17 +42,10 @@ interface Edge {
 
 const nodeTypes = {
   "timer": Timer,
-  "price-trigger": Trigger,
   "webhook": Webhook,
   "schedule": Schedule,
   "mail": Mail,
-  "http-request": HttpRequest,
-  "file-system": FileSystem,
-  "data-transform": DataTransform,
-  "google-sheets": GoogleSheets,
-  "openai": OpenAI,
-  "slack": Slack,
-  "github": GitHub
+  "http-request": HttpRequest
 };
 
 export default function workflow() {
@@ -74,6 +60,7 @@ export default function workflow() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [runResult, setRunResult] = useState<{ success: boolean; error?: string; nodeOutputs?: Record<string, unknown> } | null>(null);
+  const [executionLogs, setExecutionLogs] = useState<{ timestamp: string, message: string, type: 'info' | 'success' | 'error' }[]>([]);
 
   const handleLogout = () => {
     logout();
@@ -100,6 +87,7 @@ export default function workflow() {
     if (!workflowId) return;
     setIsRunning(true);
     setRunResult(null);
+    setExecutionLogs([{ timestamp: new Date().toLocaleTimeString(), message: "🚀 Initialization: Sending Workflow to Executor...", type: "info" }]);
     try {
       const result = await apiExecuteWorkflow(workflowId);
       setRunResult({
@@ -108,14 +96,14 @@ export default function workflow() {
         nodeOutputs: result.nodeOutputs,
       });
       if (result.success) {
-        alert("Workflow ran successfully!");
+        setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: "✨ Workflow execution finished successfully!", type: "success" }]);
       } else {
-        alert(`Workflow run failed: ${result.error ?? "Unknown error"}`);
+        setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: `❌ Workflow run failed: ${result.error ?? "Unknown error"}`, type: "error" }]);
       }
     } catch (err: unknown) {
       const message = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Failed to run workflow";
       setRunResult({ success: false, error: message });
-      alert(message);
+      setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: `❌ Workflow execution crashed: ${message}`, type: "error" }]);
     } finally {
       setIsRunning(false);
     }
@@ -187,14 +175,28 @@ export default function workflow() {
       try {
         const eventData = JSON.parse(event.data);
         if (eventData.type === "node-status-change" && eventData.nodeId) {
-          setNodes((nds) => 
-            nds.map((n) => {
+          setNodes((nds) => {
+             const node = nds.find(n => n.id === eventData.nodeId);
+             if (node) {
+                 const nodeType = node.type.toUpperCase();
+                 const textStatus = eventData.status === 'running' ? 'Started ⏳' : eventData.status === 'success' ? 'Completed ✅' : 'Failed ❌';
+                 const logType = eventData.status === 'failed' ? 'error' : eventData.status === 'success' ? 'success' : 'info';
+                 setTimeout(() => {
+                    setExecutionLogs(prev => [...prev, {
+                       timestamp: new Date().toLocaleTimeString(),
+                       message: `[${nodeType}] ${textStatus}`,
+                       type: logType
+                    }]);
+                 }, 0);
+             }
+
+            return nds.map((n) => {
                if (n.id === eventData.nodeId) {
                  return { ...n, data: { ...n.data, status: eventData.status } };
                }
                return n;
-            })
-          );
+            });
+          });
         }
       } catch (e) {
         console.error(e);
@@ -361,6 +363,24 @@ if(!sh.isValid){
       >
         <Background color="#000" gap={24} size={2} />
       </ReactFlow>
+
+      {/* Live Execution Panel */}
+      {executionLogs.length > 0 && (
+         <div className="absolute top-32 right-6 bottom-6 w-96 bg-white border-4 border-black shadow-[8px_8px_0_0_#000] z-20 flex flex-col">
+            <div className="bg-black text-white p-4 font-black uppercase text-xl flex justify-between items-center">
+               <span>Live Execution</span>
+               <button onClick={() => { setExecutionLogs([]); setRunResult(null); }} className="bg-red-500 hover:bg-red-400 text-black border-2 border-white px-2 py-1 text-sm rounded-none">CLEAR</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 bg-[#f0f0f0]">
+               {executionLogs.map((log, i) => (
+                  <div key={i} className={`p-3 border-2 border-black font-bold text-sm shadow-[2px_2px_0_0_#000] ${log.type === 'error' ? 'bg-red-300' : log.type === 'success' ? 'bg-green-300' : 'bg-white'}`}>
+                     <div className="text-[10px] text-gray-600 mb-1">{log.timestamp}</div>
+                     <div>{log.message}</div>
+                  </div>
+               ))}
+            </div>
+         </div>
+      )}
     </div>
   );
 }

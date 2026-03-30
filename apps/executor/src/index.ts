@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import axios from "axios";
+import nodemailer from "nodemailer";
 import { WorkFlow, Execution } from "db/client";
 
 dotenv.config();
@@ -86,49 +87,6 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function executeNodeLogic(node: any, inputData: any) {
   const type = node.nodeId?.title?.toLowerCase() || 'unknown';
   const meta = node.data?.metadata || {};
-  
-  if (type === 'openai') {
-     console.log(`[OPENAI] Generating response with model ${meta.model || 'gpt-4o'}`);
-     if (!meta.apiKey) throw new Error("Missing OpenAI API Key");
-     
-     const res = await axios.post('https://api.openai.com/v1/chat/completions', {
-         model: meta.model || "gpt-4o",
-         messages: [{ role: "user", content: meta.prompt || "Hello" }]
-     }, {
-         headers: {
-             'Authorization': `Bearer ${meta.apiKey}`,
-             'Content-Type': 'application/json'
-         }
-     });
-     return res.data;
-  }
-
-  if (type === 'slack') {
-     console.log(`[SLACK] Sending message to webhook...`);
-     if (!meta.webhookUrl) throw new Error("Missing Slack Webhook URL");
-     
-     const res = await axios.post(meta.webhookUrl, {
-         text: meta.message || "Hello from n8n-clone workflow!"
-     });
-     return res.data;
-  }
-
-  if (type === 'github') {
-     console.log(`[GITHUB] Creating issue in ${meta.ownerRepo}`);
-     if (!meta.token || !meta.ownerRepo) throw new Error("Missing GitHub Token or Repo");
-     
-     const res = await axios.post(`https://api.github.com/repos/${meta.ownerRepo}/issues`, {
-         title: meta.title || "Automated Issue",
-         body: meta.body || "Created via n8n-clone"
-     }, {
-         headers: {
-             'Authorization': `Bearer ${meta.token}`,
-             'Accept': 'application/vnd.github.v3+json',
-             'User-Agent': 'n8n-clone-automation'
-         }
-     });
-     return res.data;
-  }
 
   // Real execution logic!
   if (type === 'http request' || type === 'http-request') {
@@ -145,11 +103,28 @@ async function executeNodeLogic(node: any, inputData: any) {
      return res.data;
   }
   
-  if (type === 'mail' || type === 'send email') {
-     console.log(`[MAIL] Sending email to Dummy`);
-     // We will sleep to simulate SMPT sending latency
-     await sleep(2000);
-     return { success: true, emailSent: true };
+  if (type === 'mail' || type === 'send email (smtp)') {
+     console.log(`[MAIL] Sending email to ${meta.to}`);
+     if (!meta.host || !meta.port || !meta.user || !meta.password || !meta.to) {
+         throw new Error("Missing complete SMTP credentials or Recipient address.");
+     }
+     
+     const transporter = nodemailer.createTransport({
+         host: meta.host,
+         port: parseInt(meta.port),
+         secure: parseInt(meta.port) === 465,
+         auth: { user: meta.user, pass: meta.password }
+     });
+     
+     const info = await transporter.sendMail({
+         from: meta.user,
+         to: meta.to,
+         subject: meta.subject || "Automated Alert from n8n-clone",
+         text: meta.body || "This is an automated workflow execution message."
+     });
+     
+     console.log(`[MAIL] Success: ${info.messageId}`);
+     return { success: true, messageId: info.messageId };
   }
 
   // Generic triggers/delays
