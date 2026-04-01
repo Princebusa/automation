@@ -72,6 +72,16 @@ export async function apiExecuteWorkflow(workflowId: string): Promise<any> {
   return res.data;
 }
 
+export async function apiStopWorkflowExecution(workflowId: string): Promise<any> {
+  const res = await api.post(`/workflow/${workflowId}/stop`);
+  return res.data;
+}
+
+export async function apiGetLatestExecution(workflowId: string): Promise<any> {
+  const res = await api.get(`/workflow/${workflowId}/execution`);
+  return res.data;
+}
+
 export async function apiExecuteNode(nodeType: string, metadata: any): Promise<any> {
   const res = await api.post("/execute-node", { nodeType, metadata });
   return res.data;

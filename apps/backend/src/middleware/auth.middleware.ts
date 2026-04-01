@@ -11,15 +11,14 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   }
 
   const token = authHeader.split(" ")[1];
-
-  jwt.verify(token as string, process.env.JWT_SECRET as string, function(err, decoded) {
-    if (err) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }else{
-      (req as any).userId = (decoded as any).userId;
+  try {
+    const decoded = jwt.verify(token as string, process.env.JWT_SECRET as string);
+    if (!decoded || typeof decoded === 'string' || !(decoded as any).userId) {
+       return res.status(401).json({ error: "Unauthorized" });
     }
-  });
-
-  next();
-
+    (req as any).userId = (decoded as any).userId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 }

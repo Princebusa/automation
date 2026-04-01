@@ -117,6 +117,10 @@ export const executeWorkflow = async (req: Request, res: Response) => {
     const { workflowId } = req.params;
     const userId = req.userId;
 
+    if (!userId) {
+       return res.status(401).json({ message: "User not authenticated" });
+    }
+
     const workflow = await WorkFlow.findOne({ _id: workflowId, userId }).populate('nodes.nodeId');
 
     if (!workflow) {
@@ -134,18 +138,90 @@ export const executeWorkflow = async (req: Request, res: Response) => {
     }));
 
     // Create a new execution in the DB with status PENDING for the Worker to pick up
+    //@ts-ignore
     const execution = await Execution.create({
       workflowId: workflow._id,
       status: "PENDING",
-      starTime: new Date()
+      startTime: new Date()
     });
 
-    return res.json({ success: true, executionId: execution._id, message: "Execution queued successfully" });
+    // Mark the workflow as running
+    workflow.isRunning = true;
+    //@ts-ignore
+    await workflow.save();
+
+    return res.json({ 
+       success: true, 
+       executionId: execution?._id, 
+       message: "Execution queued successfully" 
+    });
   } catch (error: any) {
+    console.error("Workflow execution crash:", error);
     return res.status(500).json({
       message: "Workflow execution failed",
-      error: error.message
+      error: error?.message || String(error) || "Unknown error"
     });
+  }
+}
+
+// Stop a running workflow execution
+export const stopWorkflowExecution = async (req: Request, res: Response) => {
+  try {
+    const { workflowId } = req.params;
+    const userId = req.userId;
+
+    // Find the latest execution that is either PENDING or RUNNING
+    const execution = await Execution.findOneAndUpdate(
+      { 
+        workflowId: workflowId, 
+        status: { $in: ["PENDING", "RUNNING"] } 
+      },
+      { 
+        status: "CANCELLED",
+        endTime: new Date()
+      },
+      { sort: { starTime: -1 }, new: true }
+    );
+
+    if (!execution) {
+      return res.status(404).json({ message: "No active execution found to stop" });
+    }
+
+    // Mark the workflow as stopped
+    await WorkFlow.findByIdAndUpdate(workflowId, { isRunning: false });
+
+    // Broadcast cancellation to all connected clients for this workflow
+    const rooms = req.app.get('wssRooms');
+    if (rooms && rooms.has(workflowId)) {
+      const clients = rooms.get(workflowId);
+      clients.forEach((client: any) => {
+        if (client.readyState === 1) { // OPEN
+          client.send(JSON.stringify({
+            type: 'workflow-stopped',
+            workflowId,
+            executionId: execution._id
+          }));
+        }
+      });
+    }
+
+    return res.json({ success: true, message: "Workflow execution stopped successfully" });
+  } catch (error: any) {
+    return res.status(500).json({ 
+      message: "Failed to stop workflow execution", 
+      error: error.message 
+    });
+  }
+}
+
+// Get the latest execution status for a workflow
+export const getLatestExecution = async (req: Request, res: Response) => {
+  try {
+    const { workflowId } = req.params;
+    const execution = await Execution.findOne({ workflowId }).sort({ starTime: -1 });
+    return res.json(execution);
+  } catch (error: any) {
+    return res.status(500).json({ message: "Failed to fetch execution status", error: error.message });
   }
 }
 
@@ -201,6 +277,24 @@ export const updateNodeStatus = async (req: Request, res: Response) => {
 };
 
 // Webhook endpoint
+export const updateWorkflowStatus = async (req: Request, res: Response) => {
+  const { workflowId, status } = req.body;
+  if (!workflowId || !status) return res.status(400).json({ message: "Missing workflowId or status" });
+
+  const rooms = req.app.get('wssRooms');
+  if (rooms && rooms.has(workflowId)) {
+    const clients = rooms.get(workflowId);
+    const eventType = status === 'success' ? 'workflow-finished' : 'workflow-failed';
+    clients.forEach((client: any) => {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ type: eventType, workflowId }));
+      }
+    });
+  }
+
+  return res.json({ success: true });
+}
+
 export const handleWebhook = async (req: Request, res: Response) => {
   try {
     const { endpoint } = req.params;

@@ -5,6 +5,7 @@
     "": {
       "name": "N8N",
       "dependencies": {
+        "bson": "^7.2.0",
         "express": "^5.2.1",
         "fdir": "^6.5.0",
       },

@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
-import { apiGetWorkflow, apiUpdateWorkflow, apiExecuteWorkflow } from "@/lib/api";
+import { apiGetWorkflow, apiUpdateWorkflow, apiExecuteWorkflow, apiStopWorkflowExecution } from "@/lib/api";
 
 
 
@@ -105,7 +105,18 @@ export default function workflow() {
       setRunResult({ success: false, error: message });
       setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: `❌ Workflow execution crashed: ${message}`, type: "error" }]);
     } finally {
-      setIsRunning(false);
+      // Don't set isRunning(false) here, wait for WebSocket to tell us it's done!
+    }
+  };
+
+  const handleStopWorkflow = async () => {
+    if (!workflowId) return;
+    try {
+      setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: "⏹️ Requesting to stop execution...", type: "info" }]);
+      await apiStopWorkflowExecution(workflowId);
+    } catch (err: any) {
+      console.error("Failed to stop workflow:", err);
+      setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: "❌ Failed to stop: " + (err.response?.data?.message || err.message), type: "error" }]);
     }
   };
 
@@ -164,7 +175,7 @@ export default function workflow() {
   useEffect(() => {
     if (!workflowId) return;
 
-    const ws = new WebSocket("ws://localhost:4000");
+    const ws = new WebSocket("ws://localhost:2000");
 
     ws.onopen = () => {
       console.log("Connected to WS");
@@ -197,6 +208,16 @@ export default function workflow() {
                return n;
             });
           });
+        } else if (eventData.type === "workflow-stopped" || eventData.type === "workflow-finished" || eventData.type === "workflow-failed") {
+           setIsRunning(false);
+           const msg = eventData.type === "workflow-stopped" ? "🛑 Workflow execution has been STOPPED by user." : 
+                       eventData.type === "workflow-finished" ? "✨ Workflow execution finished successfully!" : 
+                       "❌ Workflow execution failed.";
+           setExecutionLogs(prev => [...prev, { 
+              timestamp: new Date().toLocaleTimeString(), 
+              message: msg, 
+              type: eventData.type === "workflow-failed" ? "error" : "success" 
+           }]);
         }
       } catch (e) {
         console.error(e);
@@ -270,6 +291,14 @@ if(!sh.isValid){
           >
             {isRunning ? "Running…" : "Run"}
           </Button>
+          {isRunning && (
+            <Button
+              onClick={handleStopWorkflow}
+              className="font-black uppercase text-lg border-4 border-black bg-red-500 hover:bg-red-400 text-black neo-btn rounded-none px-6 py-6"
+            >
+              Stop
+            </Button>
+          )}
           <Button
             onClick={handleUpdateWorkflow}
             disabled={!hasChanges || isSaving || isLoading}

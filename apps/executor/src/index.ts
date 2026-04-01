@@ -7,7 +7,7 @@ import { WorkFlow, Execution } from "db/client";
 dotenv.config();
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/n8n-clone";
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:2000";
 
 async function connectDB() {
   try {
@@ -100,6 +100,7 @@ async function executeNodeLogic(node: any, inputData: any) {
         data: meta.body ? JSON.parse(meta.body) : undefined,
         headers: meta.headers ? JSON.parse(meta.headers) : undefined
      });
+     console.log(res.data);
      return res.data;
   }
   
@@ -127,6 +128,22 @@ async function executeNodeLogic(node: any, inputData: any) {
      return { success: true, messageId: info.messageId };
   }
 
+  // Timer Trigger Logic
+  if (type === 'timer') {
+     const seconds = parseInt(meta.time) || 1;
+     console.log(`[TIMER] Waiting for ${seconds} seconds...`);
+     await sleep(seconds * 1000); 
+     return { success: true, data: inputData };
+  }
+
+  // Schedule/Interval Trigger Logic
+  if (type === 'schedule' || type === 'interval') {
+     const seconds = parseInt(meta.interval) || 1;
+     console.log(`[SCHEDULE] Simulated interval wait for ${seconds} seconds...`);
+     await sleep(seconds * 1000); 
+     return { success: true, data: inputData };
+  }
+
   // Generic triggers/delays
   console.log(`[${type.toUpperCase()}] Executing generic logic...`);
   await sleep(1500); 
@@ -145,30 +162,73 @@ async function processExecution(execution: any) {
      }));
      const edges = workflow.edges || [];
      
-     const sortedNodes = topologicalSort(nodes, edges);
-     console.log(`Executing workflow ${workflow._id} - nodes run count: ${sortedNodes.length}`);
+     const executionPath = topologicalSort(nodes, edges);
+      
+      // Find the trigger node to check for 'endTime' (expiry)
+      const triggerNode = nodes.find(n => n.data?.kind === 'TRIGGER');
+      const endTimeStr = triggerNode?.data?.metadata?.endTime;
+      const endTime = endTimeStr ? new Date(endTimeStr) : null;
 
-     let currentData: any = null;
+      let previousData = null;
+      for (const node of executionPath) {
+         // Check if already cancelled by user
+         const currentExecution = await Execution.findById(execution._id);
+         if ((currentExecution?.status as any) === 'CANCELLED') {
+            console.log(`Execution ${execution._id} was cancelled by user.`);
+            return;
+         }
 
-     for (const node of sortedNodes) {
-        await reportNodeStatus(workflow._id.toString(), node.id, 'running');
-        try {
-           currentData = await executeNodeLogic(node, currentData);
-           await reportNodeStatus(workflow._id.toString(), node.id, 'success');
-        } catch (err) {
-           await reportNodeStatus(workflow._id.toString(), node.id, 'failed');
-           throw err; // Stop execution on failure
-        }
+         // Check if End Time reached
+         if (endTime && new Date() > endTime) {
+            console.log(`Execution ${execution._id} reached End Time. Stopping.`);
+            (execution.status as any) = "CANCELLED";
+            execution.endTime = new Date();
+            await execution.save();
+            
+            await WorkFlow.findByIdAndUpdate(workflow?._id, { isRunning: false });
+            await axios.post(`${BACKEND_URL}/api/workflow-status`, {
+               workflowId: workflow?._id.toString(),
+               status: 'stopped' // This will trigger 'workflow-stopped' in UI
+            });
+            return;
+         }
+
+         await reportNodeStatus(workflow._id.toString(), node.id, 'running');
+         try {
+            previousData = await executeNodeLogic(node, previousData);
+            await reportNodeStatus(workflow._id.toString(), node.id, 'success');
+         } catch (err) {
+            await reportNodeStatus(workflow._id.toString(), node.id, 'failed');
+            throw err; // Stop execution on failure
+         }
      }
      
      execution.status = "SUCCESS";
      execution.endTime = new Date();
      await execution.save();
+     
+     // Mark workflow as NOT running
+     await WorkFlow.findByIdAndUpdate(workflow?._id, { isRunning: false });
+     
+     // Report final status to backend for WebSocket broadcast
+     await axios.post(`${BACKEND_URL}/api/workflow-status`, {
+        workflowId: workflow?._id.toString(),
+        status: 'success'
+     });
      console.log(`Execution ${execution._id} completed SUCCESS.`);
   } catch (error) {
      execution.status = "FAILED";
      execution.endTime = new Date();
      await execution.save();
+     
+     // Mark workflow as NOT running even on failure
+     try {
+       await WorkFlow.findByIdAndUpdate(execution.workflowId, { isRunning: false });
+       await axios.post(`${BACKEND_URL}/api/workflow-status`, {
+          workflowId: execution.workflowId.toString(),
+          status: 'failed'
+       });
+     } catch (e) {}
      console.error(`Execution ${execution._id} FAILED.`, error);
   }
 }

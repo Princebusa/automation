@@ -88,6 +88,10 @@ const WorkFlowSchema = new Schema({
     },
     nodes: [WorkflowNodeSchema],
     edges: [EdgesSchema],
+    isRunning: {
+        type: Boolean,
+        default: false
+    }
 });
 
 
@@ -120,11 +124,11 @@ const ExecutionSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ["SUCCESS", "FAILED", "PENDING"],
+        enum: ["SUCCESS", "FAILED", "PENDING", "RUNNING", "CANCELLED"],
     },
-    starTime: {
+    startTime: {
         type: Date,
-        default: Date.now(),
+        default: Date.now,
         required: true
     },
     endTime: {

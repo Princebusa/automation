@@ -2,21 +2,15 @@ import type { NodeTypes } from "comman";
 import { useState } from "react";
 import type { MetaData } from "./workflow";
 import { Button } from "@/components/ui/button";
-import type { TimerMetadata } from "../nodes/triggers/Timer"
-import type { PriceTriggerMetadata } from "../nodes/triggers/Trigger"
-import type { WebhookMetadata } from "../nodes/triggers/Webhook";
-import type { ScheduleMetadata } from "../nodes/triggers/Schedule";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 
 import {
@@ -24,7 +18,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -94,14 +87,19 @@ export const TriggerSheet = ({
 
           {selectedTrigger === "timer" &&
             <div className="grid gap-3">
-              <Label className="capitalize">enter a time to trigger a flow every time</Label>
-
-              <Input type="number" onChange={(e) => setMetaData(metadata => ({ ...metadata, time: Number(e.target.value) }))} />
+              <div className="grid gap-1">
+                <Label className="capitalize font-bold text-xs">Run Interval (Seconds)</Label>
+                <Input type="number" placeholder="60" onChange={(e) => setMetaData((metadata: any) => ({ ...metadata, time: Number(e.target.value) }))} />
+              </div>
+              <div className="grid gap-1">
+                <Label className="capitalize font-bold text-xs text-red-600">Auto-Stop After (End Time)</Label>
+                <Input type="datetime-local" onChange={(e) => setMetaData((metadata: any) => ({ ...metadata, endTime: e.target.value }))} />
+              </div>
             </div>
           }
 
 
-          {selectedTrigger === "price-trigger" &&
+          {(selectedTrigger as any) === "price-trigger" &&
             <div className="grid gap-3">
               <div className="grid gap-3">
                 <Label>Enter Trigger Price</Label>
@@ -109,7 +107,7 @@ export const TriggerSheet = ({
               </div>
             </div>}
 
-          {selectedTrigger === "webhook" &&
+          {(selectedTrigger as any) === "webhook" &&
             <div className="grid gap-3">
               <div className="grid gap-2">
                 <Label>Endpoint Path</Label>
@@ -120,7 +118,7 @@ export const TriggerSheet = ({
               </div>
               <div className="grid gap-2">
                 <Label>HTTP Method</Label>
-                <Select value={metadata.method} onValueChange={(value) => setMetaData((metadata: any) => ({ ...metadata, method: value }))}>
+                <Select value={metadata.method as string} onValueChange={(value) => setMetaData((metadata: any) => ({ ...metadata, method: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
@@ -134,11 +132,11 @@ export const TriggerSheet = ({
               </div>
             </div>}
 
-          {selectedTrigger === "schedule" &&
+          {(selectedTrigger as any) === "schedule" &&
             <div className="grid gap-3">
               <div className="grid gap-2">
                 <Label>Schedule Type</Label>
-                <Select value={metadata.type} onValueChange={(value) => setMetaData((metadata: any) => ({ ...metadata, type: value }))}>
+                <Select value={metadata.type as string} onValueChange={(value) => setMetaData((metadata: any) => ({ ...metadata, type: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -177,6 +175,11 @@ export const TriggerSheet = ({
                   />
                 </div>
               )}
+              
+              <div className="grid gap-1 mt-2">
+                <Label className="capitalize font-bold text-xs text-red-600">Auto-Stop After (End Time)</Label>
+                <Input type="datetime-local" onChange={(e) => setMetaData((metadata: any) => ({ ...metadata, endTime: e.target.value }))} />
+              </div>
             </div>}
         </div>
         <SheetFooter className="mt-8">

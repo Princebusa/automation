@@ -1,4 +1,4 @@
-import { apiGetAllWorkflows, apiCreateWorkflow, apiExecuteWorkflow } from "../lib/api";
+import { apiGetAllWorkflows, apiCreateWorkflow, apiExecuteWorkflow, apiStopWorkflowExecution } from "../lib/api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '../contexts/AuthContext';
@@ -8,12 +8,21 @@ export default function dashboard() {
   const { logout } = useAuth();
   const [data, setData] = useState<any>([]);
   const [loading, setLoading] = useState(false);
-  const [executing, setExecuting] = useState<string | null>(null);
 
   const navigate = useNavigate();
   
   useEffect(() => {
-    apiGetAllWorkflows().then((users) => setData(users));
+    const fetchWorkflows = async () => {
+      const users = await apiGetAllWorkflows();
+      setData(users);
+    };
+    
+    fetchWorkflows();
+
+    // Refresh workflow list every 5 seconds to catch status updates from the backend/executor
+    const interval = setInterval(fetchWorkflows, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const createNewWorkflow = async () => {
@@ -34,16 +43,22 @@ export default function dashboard() {
   };
 
   const executeWorkflow = async (workflowId: string) => {
-    setExecuting(workflowId);
     try {
       const result = await apiExecuteWorkflow(workflowId);
-      alert(`Workflow execution result: ${result.success ? 'Success' : 'Failed'}\n${result.error || ''}`);
-      console.log('Workflow execution result:', result);
+      // Don't alert here to avoid blocking UI during polling
+      console.log('Execution started:', result);
     } catch (error) {
       console.error('Failed to execute workflow:', error);
-      alert('Failed to execute workflow. Check console for details.');
-    } finally {
-      setExecuting(null);
+      alert('Failed to execute workflow.');
+    }
+  };
+
+  const stopWorkflow = async (workflowId: string) => {
+    try {
+      await apiStopWorkflowExecution(workflowId);
+    } catch (error) {
+      console.error('Failed to stop workflow:', error);
+      alert('Failed to stop workflow.');
     }
   };
 
@@ -113,13 +128,13 @@ export default function dashboard() {
                     <ExternalLink className="w-5 h-5" /> Open
                   </button>
                   <button 
-                    onClick={() => executeWorkflow(itm._id)}
-                    disabled={executing === itm._id}
+                    onClick={() => itm.isRunning ? stopWorkflow(itm._id) : executeWorkflow(itm._id)}
                     className={`flex-1 flex justify-center items-center gap-2 py-3 border-4 border-black font-black uppercase
-                      ${executing === itm._id ? 'bg-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all'}`}
+                      ${itm.isRunning ? 'bg-red-500 hover:bg-red-400' : 'bg-black text-white hover:bg-gray-800'} 
+                      hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all`}
                   >
-                    {executing === itm._id ? (
-                      'Running...'
+                    {itm.isRunning ? (
+                      'Stop'
                     ) : (
                       <><Play className="w-5 h-5 fill-white" /> Run</>
                     )}
