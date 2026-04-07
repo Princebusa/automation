@@ -36,6 +36,17 @@ async function reportNodeStatus(workflowId: string, nodeId: string, status: 'run
   }
 }
 
+async function reportWorkflowStatus(workflowId: string, status: 'success' | 'failed' | 'stopped') {
+  try {
+    await axios.post(`${BACKEND_URL}/api/workflow-status`, {
+      workflowId,
+      status
+    });
+  } catch (err: any) {
+    console.error(`Failed to report workflow status ${status}:`, err.message);
+  }
+}
+
 function topologicalSort(nodes: any[], edges: any[]) {
   const sorted: any[] = [];
   const visited = new Set();
@@ -84,6 +95,22 @@ function topologicalSort(nodes: any[], edges: any[]) {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function resolveVariables(text: string, data: any): string {
+  if (!text || !data) return text;
+  
+  // If data is array, use first item as is standard in simple workflow tools
+  const source = Array.isArray(data) ? data[0] : data;
+  
+  return text.replace(/\{\{\s*\$json(?:\.(.*?))?\s*\}\}/g, (_, path) => {
+    // If no path is provided, return the entire object stringified
+    if (!path) return JSON.stringify(source, null, 2);
+    
+    // Support nested path resolution (e.g. "data.user.id")
+    const value = path.split('.').reduce((obj: any, key: string) => obj?.[key], source);
+    return value !== undefined ? String(value) : `{{$json.${path}}}`;
+  });
+}
+
 async function executeNodeLogic(node: any, inputData: any) {
   const type = node.nodeId?.title?.toLowerCase() || 'unknown';
   const meta = node.data?.metadata || {};
@@ -100,7 +127,7 @@ async function executeNodeLogic(node: any, inputData: any) {
         data: meta.body ? JSON.parse(meta.body) : undefined,
         headers: meta.headers ? JSON.parse(meta.headers) : undefined
      });
-     console.log(res.data);
+     console.log("request done");
      return res.data;
   }
   
@@ -110,6 +137,10 @@ async function executeNodeLogic(node: any, inputData: any) {
          throw new Error("Missing complete SMTP credentials or Recipient address.");
      }
      
+     // Resolve dynamic variables in Subject and Body
+     const subject = resolveVariables(meta.subject || "Automated Alert from n8n-clone", inputData);
+     const body = resolveVariables(meta.body || "This is an automated workflow execution message.", inputData);
+
      const transporter = nodemailer.createTransport({
          host: meta.host,
          port: parseInt(meta.port),
@@ -120,8 +151,8 @@ async function executeNodeLogic(node: any, inputData: any) {
      const info = await transporter.sendMail({
          from: meta.user,
          to: meta.to,
-         subject: meta.subject || "Automated Alert from n8n-clone",
-         text: meta.body || "This is an automated workflow execution message."
+         subject: subject,
+         text: body
      });
      
      console.log(`[MAIL] Success: ${info.messageId}`);
@@ -164,58 +195,74 @@ async function processExecution(execution: any) {
      
      const executionPath = topologicalSort(nodes, edges);
       
-      // Find the trigger node to check for 'endTime' (expiry)
-      const triggerNode = nodes.find(n => n.data?.kind === 'TRIGGER');
+      // Find the trigger node to determine if it's recurring
+      const triggerNode = nodes.find(n => n.data?.kind === 'TRIGGER') as any;
+      const isTimer = triggerNode?.nodeId?.title?.toLowerCase() === 'timer' || triggerNode?.type === 'timer';
+      const isSchedule = triggerNode?.nodeId?.title?.toLowerCase() === 'schedule' || triggerNode?.type === 'schedule';
+      const isRecurring = isTimer || isSchedule;
+
+      // Extract interval (seconds)
+      let intervalSec = 0;
+      if (isTimer) {
+         intervalSec = parseInt(triggerNode?.data?.metadata?.time) || 0;
+      } else if (isSchedule) {
+         intervalSec = parseInt(triggerNode?.data?.metadata?.interval) || 0;
+      }
+
       const endTimeStr = triggerNode?.data?.metadata?.endTime;
       const endTime = endTimeStr ? new Date(endTimeStr) : null;
 
-      let previousData = null;
-      for (const node of executionPath) {
-         // Check if already cancelled by user
-         const currentExecution = await Execution.findById(execution._id);
-         if ((currentExecution?.status as any) === 'CANCELLED') {
-            console.log(`Execution ${execution._id} was cancelled by user.`);
-            return;
+      // Outer Loop for Recurring Triggers
+      do {
+         let previousData = null;
+         console.log(`[PASS START] Workflow ${workflow._id} - ${isRecurring ? "(Recurring)" : "(One-off)"}`);
+
+         for (const node of executionPath) {
+            // Check if already cancelled by user
+            const currentExecution = await Execution.findById(execution._id);
+            if ((currentExecution?.status as any) === 'CANCELLED') {
+               console.log(`Execution ${execution._id} was cancelled by user.`);
+               await reportWorkflowStatus(workflow._id.toString(), 'stopped');
+               return;
+            }
+
+            // Check if End Time reached
+            if (endTime && new Date() > endTime) {
+               console.log(`Execution ${execution._id} reached End Time. Stopping.`);
+               (execution.status as any) = "CANCELLED";
+               execution.endTime = new Date();
+               await execution.save();
+               
+               await WorkFlow.findByIdAndUpdate(workflow?._id, { isRunning: false });
+               await reportWorkflowStatus(workflow._id.toString(), 'stopped');
+               return;
+            }
+
+            await reportNodeStatus(workflow._id.toString(), node.id, 'running');
+            try {
+               previousData = await executeNodeLogic(node, previousData);
+               await reportNodeStatus(workflow._id.toString(), node.id, 'success');
+            } catch (err) {
+               await reportNodeStatus(workflow._id.toString(), node.id, 'failed');
+               throw err; // This will trigger the catch block below
+            }
          }
 
-         // Check if End Time reached
-         if (endTime && new Date() > endTime) {
-            console.log(`Execution ${execution._id} reached End Time. Stopping.`);
-            (execution.status as any) = "CANCELLED";
-            execution.endTime = new Date();
-            await execution.save();
-            
-            await WorkFlow.findByIdAndUpdate(workflow?._id, { isRunning: false });
-            await axios.post(`${BACKEND_URL}/api/workflow-status`, {
-               workflowId: workflow?._id.toString(),
-               status: 'stopped' // This will trigger 'workflow-stopped' in UI
-            });
-            return;
+         // If recurring, wait before next loop
+         if (isRecurring && intervalSec > 0) {
+            console.log(`[LOOP] Waiting ${intervalSec}s before next pass...`);
+            await sleep(intervalSec * 1000);
          }
 
-         await reportNodeStatus(workflow._id.toString(), node.id, 'running');
-         try {
-            previousData = await executeNodeLogic(node, previousData);
-            await reportNodeStatus(workflow._id.toString(), node.id, 'success');
-         } catch (err) {
-            await reportNodeStatus(workflow._id.toString(), node.id, 'failed');
-            throw err; // Stop execution on failure
-         }
-     }
-     
-     execution.status = "SUCCESS";
-     execution.endTime = new Date();
-     await execution.save();
-     
-     // Mark workflow as NOT running
-     await WorkFlow.findByIdAndUpdate(workflow?._id, { isRunning: false });
-     
-     // Report final status to backend for WebSocket broadcast
-     await axios.post(`${BACKEND_URL}/api/workflow-status`, {
-        workflowId: workflow?._id.toString(),
-        status: 'success'
-     });
-     console.log(`Execution ${execution._id} completed SUCCESS.`);
+      } while (isRecurring);
+
+      execution.status = "SUCCESS";
+      execution.endTime = new Date();
+      await execution.save();
+      
+      await WorkFlow.findByIdAndUpdate(workflow?._id, { isRunning: false });
+      await reportWorkflowStatus(workflow._id.toString(), 'success');
+      console.log(`Execution ${execution._id} completed SUCCESS.`);
   } catch (error) {
      execution.status = "FAILED";
      execution.endTime = new Date();
@@ -224,10 +271,7 @@ async function processExecution(execution: any) {
      // Mark workflow as NOT running even on failure
      try {
        await WorkFlow.findByIdAndUpdate(execution.workflowId, { isRunning: false });
-       await axios.post(`${BACKEND_URL}/api/workflow-status`, {
-          workflowId: execution.workflowId.toString(),
-          status: 'failed'
-       });
+       await reportWorkflowStatus(execution.workflowId.toString(), 'failed');
      } catch (e) {}
      console.error(`Execution ${execution._id} FAILED.`, error);
   }
@@ -242,7 +286,7 @@ async function startWorker() {
       const execution = await Execution.findOneAndUpdate(
         { status: "PENDING" },
         { status: "RUNNING" },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (execution) {

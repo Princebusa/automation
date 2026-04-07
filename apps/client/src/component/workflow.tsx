@@ -96,7 +96,7 @@ export default function workflow() {
         nodeOutputs: result.nodeOutputs,
       });
       if (result.success) {
-        setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: "✨ Workflow execution finished successfully!", type: "success" }]);
+        setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: "✨ Workflow execution started", type: "success" }]);
       } else {
         setExecutionLogs(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), message: `❌ Workflow run failed: ${result.error ?? "Unknown error"}`, type: "error" }]);
       }

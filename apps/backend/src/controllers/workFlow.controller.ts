@@ -180,7 +180,7 @@ export const stopWorkflowExecution = async (req: Request, res: Response) => {
         status: "CANCELLED",
         endTime: new Date()
       },
-      { sort: { starTime: -1 }, new: true }
+      { sort: { startTime: -1 }, returnDocument: "after" }
     );
 
     if (!execution) {

@@ -136,7 +136,7 @@ export const ActionSheet = ({
                  <Label className="font-bold uppercase text-[10px]">SMTP Host</Label>
                  <Input 
                    placeholder="smtp.gmail.com" 
-                   onChange={(e) => setMetaData(prev => ({ ...prev, host: e.target.value }))}
+                   onChange={(e) => setMetaData((prev: any) => ({ ...prev, host: e.target.value }))}
                    className="border-2 border-black rounded-none bg-white text-xs h-8"
                  />
                </div>
@@ -145,7 +145,7 @@ export const ActionSheet = ({
                  <Input 
                    type="number"
                    placeholder="587" 
-                   onChange={(e) => setMetaData(prev => ({ ...prev, port: e.target.value }))}
+                   onChange={(e) => setMetaData((prev: any) => ({ ...prev, port: e.target.value }))}
                    className="border-2 border-black rounded-none bg-white text-xs h-8"
                  />
                </div>
@@ -155,7 +155,7 @@ export const ActionSheet = ({
               <Label className="font-bold uppercase text-[10px]">Username</Label>
               <Input 
                 placeholder="your-email@gmail.com" 
-                onChange={(e) => setMetaData(prev => ({ ...prev, user: e.target.value }))}
+                onChange={(e) => setMetaData((prev: any) => ({ ...prev, user: e.target.value }))}
                 className="border-2 border-black rounded-none bg-white text-xs h-8"
               />
             </div>
@@ -164,7 +164,7 @@ export const ActionSheet = ({
               <Input 
                 type="password"
                 placeholder="****" 
-                onChange={(e) => setMetaData(prev => ({ ...prev, password: e.target.value }))}
+                onChange={(e) => setMetaData((prev: any) => ({ ...prev, password: e.target.value }))}
                 className="border-2 border-black rounded-none bg-white text-xs h-8"
               />
             </div>
@@ -175,7 +175,7 @@ export const ActionSheet = ({
               <Label className="font-bold uppercase text-[10px]">To Address</Label>
               <Input 
                 placeholder="recipient@example.com" 
-                onChange={(e) => setMetaData(prev => ({ ...prev, to: e.target.value }))}
+                onChange={(e) => setMetaData((prev: any) => ({ ...prev, to: e.target.value }))}
                 className="border-2 border-black rounded-none bg-white text-xs h-8"
               />
             </div>
@@ -183,7 +183,7 @@ export const ActionSheet = ({
               <Label className="font-bold uppercase text-[10px]">Subject</Label>
               <Input 
                 placeholder="Automated Alert" 
-                onChange={(e) => setMetaData(prev => ({ ...prev, subject: e.target.value }))}
+                onChange={(e) => setMetaData((prev: any) => ({ ...prev, subject: e.target.value }))}
                 className="border-2 border-black rounded-none bg-white text-xs h-8"
               />
             </div>
@@ -191,9 +191,12 @@ export const ActionSheet = ({
               <Label className="font-bold uppercase text-[10px]">Body Text</Label>
               <textarea 
                 placeholder="Workflow execution completed." 
-                onChange={(e) => setMetaData(prev => ({ ...prev, body: e.target.value }))}
+                onChange={(e) => setMetaData((prev: any) => ({ ...prev, body: e.target.value }))}
                 className="border-2 border-black rounded-none bg-white text-xs p-2 min-h-[60px]"
               />
+              <span className="text-[9px] text-blue-800 font-bold italic">
+                Tip: Use {"{{ $json.fieldName }}"} to insert data from previous nodes.
+              </span>
             </div>
 
           </div>
