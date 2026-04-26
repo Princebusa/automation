@@ -9,7 +9,7 @@ export default function Home() {
     <div className="min-h-screen bg-yellow-50 text-black font-sans selection:bg-pink-500 selection:text-white pb-0">
       {/* Navigation */}
       <nav className="flex justify-between items-center p-6 border-b-4 border-black bg-white">
-        <div className="text-3xl font-bold tracking-tighter cursor-pointer">n8n<span className="text-pink-500">.clone</span></div>
+        <div className="text-3xl font-bold tracking-tighter cursor-pointer">flowSync<span className="text-pink-500"></span></div>
         <div className="space-x-6 flex items-center">
           {isAuthenticated ? (
             <Link to="/dashboard" className="px-6 py-2 bg-blue-400 neo-btn rounded-none">

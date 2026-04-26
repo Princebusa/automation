@@ -40,7 +40,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-yellow-50 p-6 selection:bg-pink-500 selection:text-white">
       <Link to="/" className="absolute top-8 left-8 font-black text-3xl tracking-tighter hover:bg-black hover:text-white transition-colors p-2">
-        n8n<span className="text-pink-500">.clone</span>
+        FlowSync<span className="text-pink-500"></span>
       </Link>
       
       <div className="w-full max-w-md p-10 space-y-8 bg-pink-300 border-4 border-black shadow-[8px_8px_0_0_#000]">

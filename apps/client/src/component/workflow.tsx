@@ -281,7 +281,7 @@ if(!sh.isValid){
       {/* Floating Neo-Brutalist Header */}
       <div className="absolute top-6 left-6 right-6 z-10 flex justify-between items-center bg-white border-4 border-black p-4 shadow-[8px_8px_0_0_#000]">
         <div className="font-black text-2xl tracking-tighter uppercase">
-          n8n<span className="text-pink-500">.clone</span> / <span className="text-gray-500">Editor</span>
+          FlowSync<span className="text-pink-500"></span> / <span className="text-gray-500">Editor</span>
         </div>
         <div className="flex gap-4">
           <Button

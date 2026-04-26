@@ -67,7 +67,7 @@ export default function dashboard() {
       {/* Top Navbar */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-6 bg-white border-4 border-black p-6 shadow-[8px_8px_0_0_#000]">
         <h2 className="text-4xl font-black uppercase tracking-tight flex items-center gap-3">
-          n8n<span className="text-pink-500">.clone</span> <span className="text-2xl text-gray-500 bg-gray-200 px-2 py-1 border-2 border-black">Dashboard</span>
+          FlowSync<span className="text-pink-500"></span> <span className="text-2xl text-gray-500 bg-gray-200 px-2 py-1 border-2 border-black">Dashboard</span>
         </h2>
         
         <div className="flex items-center gap-4">

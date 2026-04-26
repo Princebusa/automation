@@ -53,7 +53,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-yellow-50 p-6 pt-16 selection:bg-blue-400 selection:text-white">
       <Link to="/" className="absolute top-8 left-8 font-black text-3xl tracking-tighter hover:bg-black hover:text-white transition-colors p-2">
-        n8n<span className="text-pink-500">.clone</span>
+        FlowSync<span className="text-pink-500"></span>
       </Link>
       
       <div className="w-full max-w-md p-10 space-y-8 bg-blue-300 border-4 border-black shadow-[8px_8px_0_0_#000]">
